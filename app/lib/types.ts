@@ -43,4 +43,5 @@ export interface CalendarProps {
   onCreateBooking?: (date: Date) => void;
   onMultiDateBooking?: () => void;
   onBookingClick?: (booking: Booking) => void;
+  onMonthChange?: (date: Date) => void;
 }

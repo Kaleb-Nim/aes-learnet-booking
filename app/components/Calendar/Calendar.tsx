@@ -2,6 +2,7 @@
 
 import { CalendarProps } from '../../lib/types';
 import { useCalendar } from '../../hooks/useCalendar';
+import { getNextMonth, getPreviousMonth } from '../../lib/utils/dateUtils';
 import CalendarNavigation from './CalendarNavigation';
 import CalendarGrid from './CalendarGrid';
 
@@ -11,7 +12,8 @@ export default function Calendar({
   bookings = [],
   onCreateBooking,
   onMultiDateBooking,
-  onBookingClick
+  onBookingClick,
+  onMonthChange
 }: CalendarProps) {
   const {
     currentDate,
@@ -26,6 +28,16 @@ export default function Calendar({
     selectDate(date);
     onDateSelect?.(date);
     onCreateBooking?.(date);
+  };
+
+  const handleNextMonth = () => {
+    goToNextMonth();
+    onMonthChange?.(getNextMonth(currentDate));
+  };
+
+  const handlePreviousMonth = () => {
+    goToPreviousMonth();
+    onMonthChange?.(getPreviousMonth(currentDate));
   };
 
   const currentSelectedDate = selectedDate || internalSelectedDate;
@@ -58,8 +70,8 @@ export default function Calendar({
       {/* Calendar Navigation */}
       <CalendarNavigation
         currentDate={currentDate}
-        onPreviousMonth={goToPreviousMonth}
-        onNextMonth={goToNextMonth}
+        onPreviousMonth={handlePreviousMonth}
+        onNextMonth={handleNextMonth}
       />
 
       {/* Calendar Grid */}
