@@ -22,26 +22,52 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [loadedMonths, setLoadedMonths] = useState<Set<string>>(new Set());
   const { success, error: showError } = useNotifications();
+
+  // Helper function to generate month key
+  const getMonthKey = (date: Date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  // Helper function to merge bookings while avoiding duplicates
+  const mergeBookings = (existingBookings: Booking[], newBookings: Booking[]) => {
+    const bookingMap = new Map<string, Booking>();
+    
+    // Add existing bookings
+    existingBookings.forEach(booking => {
+      bookingMap.set(booking.id, booking);
+    });
+    
+    // Add/update with new bookings
+    newBookings.forEach(booking => {
+      bookingMap.set(booking.id, booking);
+    });
+    
+    return Array.from(bookingMap.values()).sort((a, b) => {
+      const dateCompare = a.date.localeCompare(b.date);
+      if (dateCompare !== 0) return dateCompare;
+      return a.start_time.localeCompare(b.start_time);
+    });
+  };
 
   // Load bookings on component mount
   useEffect(() => {
     loadBookings();
   }, []);
 
-  // Load bookings when month changes (but not on initial mount)
+  // Load bookings when month changes
   useEffect(() => {
-    const now = new Date();
-    const isSameMonth = currentMonth.getFullYear() === now.getFullYear() && 
-                       currentMonth.getMonth() === now.getMonth();
+    const monthKey = getMonthKey(currentMonth);
     
-    if (!isSameMonth) {
+    // Only load if we haven't loaded this month before
+    if (!loadedMonths.has(monthKey)) {
       loadBookingsForMonth(currentMonth);
     }
-  }, [currentMonth]);
+  }, [currentMonth, loadedMonths]);
 
   const loadBookings = async () => {
-    // Initial load - get all bookings to ensure we have data
+    // Initial load - get all bookings to ensure we have comprehensive data
     try {
       setIsLoading(true);
       setError(null);
@@ -49,7 +75,21 @@ export default function Home() {
       
       const bookingsData = await BookingAPI.getAllBookings();
       setBookings(bookingsData);
-      logger.info(`Loaded ${bookingsData.length} total bookings`, 'PAGE');
+      
+      // Mark all months as loaded that have bookings
+      const monthsWithBookings = new Set<string>();
+      bookingsData.forEach(booking => {
+        const bookingDate = new Date(booking.date);
+        const monthKey = getMonthKey(bookingDate);
+        monthsWithBookings.add(monthKey);
+      });
+      
+      // Also mark current month as loaded
+      const currentMonthKey = getMonthKey(new Date());
+      monthsWithBookings.add(currentMonthKey);
+      
+      setLoadedMonths(monthsWithBookings);
+      logger.info(`Loaded ${bookingsData.length} total bookings covering ${monthsWithBookings.size} months`, 'PAGE');
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       logger.error('Failed to load bookings', 'PAGE', err);
@@ -57,7 +97,7 @@ export default function Home() {
       showError('Failed to Load Bookings', errorMessage);
       
       // Fall back to mock data for development
-      setBookings([
+      const mockBookings = [
         {
           id: '1',
           date: '2025-06-15',
@@ -80,38 +120,54 @@ export default function Home() {
           created_at: '2025-06-06T02:20:41.879665+00:00',
           updated_at: '2025-06-06T02:20:41.879665+00:00'
         }
-      ]);
+      ];
+      setBookings(mockBookings);
+      setLoadedMonths(new Set(['2025-06']));
     } finally {
       setIsLoading(false);
     }
   };
 
   const loadBookingsForMonth = async (date: Date) => {
+    const monthKey = getMonthKey(date);
+    
     try {
       setIsLoading(true);
       setError(null);
-      logger.userAction(`Loading bookings for ${date.getFullYear()}-${date.getMonth() + 1}`);
+      logger.userAction(`Loading bookings for ${monthKey}`);
       
-      let bookingsData: Booking[];
+      let newBookingsData: Booking[];
       
       try {
         // Try to get specific month bookings
-        bookingsData = await BookingAPI.getBookingsForMonth(
+        newBookingsData = await BookingAPI.getBookingsForMonth(
           date.getFullYear(),
           date.getMonth() + 1
         );
-        logger.info(`Loaded ${bookingsData.length} bookings for month`, 'PAGE');
+        logger.info(`Loaded ${newBookingsData.length} bookings for ${monthKey}`, 'PAGE');
       } catch (rpcError) {
         // Fallback to all bookings if RPC function not available
         logger.warn('RPC function not available, falling back to getAllBookings', 'PAGE');
-        bookingsData = await BookingAPI.getAllBookings();
-        logger.info(`Loaded ${bookingsData.length} total bookings (fallback)`, 'PAGE');
+        const allBookings = await BookingAPI.getAllBookings();
+        
+        // Filter to just this month's bookings from the full dataset
+        newBookingsData = allBookings.filter(booking => {
+          const bookingDate = new Date(booking.date);
+          return getMonthKey(bookingDate) === monthKey;
+        });
+        
+        logger.info(`Filtered ${newBookingsData.length} bookings for ${monthKey} from ${allBookings.length} total`, 'PAGE');
       }
       
-      setBookings(bookingsData);
+      // Merge with existing bookings instead of replacing
+      setBookings(prevBookings => mergeBookings(prevBookings, newBookingsData));
+      
+      // Mark this month as loaded
+      setLoadedMonths(prev => new Set([...prev, monthKey]));
+      
     } catch (err) {
       const errorMessage = getErrorMessage(err);
-      logger.error('Failed to load bookings for month', 'PAGE', err);
+      logger.error(`Failed to load bookings for ${monthKey}`, 'PAGE', err);
       showError('Failed to Load Bookings', errorMessage);
     } finally {
       setIsLoading(false);
@@ -194,7 +250,10 @@ export default function Home() {
     try {
       logger.userAction('Creating booking', { formData });
       const newBooking = await BookingAPI.createBooking(formData);
-      setBookings(prev => [...prev, newBooking]);
+      
+      // Update bookings using merge to maintain cache
+      setBookings(prev => mergeBookings(prev, [newBooking]));
+      
       setIsModalOpen(false);
       setSelectedDate(undefined);
       
@@ -212,7 +271,10 @@ export default function Home() {
     try {
       logger.userAction('Creating multi-date booking', { formData });
       const newBookings = await BookingAPI.createMultiDateBooking(formData);
-      setBookings(prev => [...prev, ...newBookings]);
+      
+      // Update bookings using merge to maintain cache
+      setBookings(prev => mergeBookings(prev, newBookings));
+      
       setIsModalOpen(false);
       setSelectedDate(undefined);
       
