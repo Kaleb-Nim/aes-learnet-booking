@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { getCalendarDays, getNextMonth, getPreviousMonth } from '../lib/utils/dateUtils';
-import { Booking } from '../lib/types';
+import { BookingWithEventDetails } from '../lib/types';
 
-export function useCalendar(initialDate?: Date, bookings: Booking[] = []) {
+export function useCalendar(initialDate?: Date, bookings: BookingWithEventDetails[] = []) {
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 

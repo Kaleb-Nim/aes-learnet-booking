@@ -12,7 +12,7 @@ import {
   isSameDay,
   parseISO
 } from 'date-fns';
-import { Booking, CalendarDay } from '../types';
+import { BookingWithEventDetails, CalendarDay } from '../types';
 
 export const formatDate = (date: Date, formatString: string = 'yyyy-MM-dd'): string => {
   return format(date, formatString);
@@ -30,7 +30,7 @@ export const formatTimeRange = (startTime: string, endTime: string): string => {
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 };
 
-export const getCalendarDays = (currentDate: Date, bookings: Booking[] = []): CalendarDay[] => {
+export const getCalendarDays = (currentDate: Date, bookings: BookingWithEventDetails[] = []): CalendarDay[] => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart);

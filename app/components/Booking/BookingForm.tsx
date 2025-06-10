@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, Clock, User, Phone, FileText } from 'lucide-react';
+import { Calendar, Clock, User, Phone, FileText, Home } from 'lucide-react';
 import { bookingFormSchema, BookingFormData, commonTimeSlots } from '../../lib/utils/validationSchemas';
 import { formatDate, formatDisplayDate } from '../../lib/utils/dateUtils';
 import Button from '../UI/Button';
@@ -30,6 +30,7 @@ export default function BookingForm({
   } = useForm<BookingFormData>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
+      room_id: '1-21',
       date: formatDate(selectedDate),
       start_time: '08:00',
       end_time: '12:00',
@@ -59,6 +60,28 @@ export default function BookingForm({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+      {/* Room Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Room Selection
+        </label>
+        <div className="relative">
+          <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <select
+            {...register('room_id')}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          >
+            <option value="1-21">Room #1-21 (Main Conference Room)</option>
+            <option value="1-17">Room #1-17 (Training Room)</option>
+          </select>
+        </div>
+        {errors.room_id && (
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {errors.room_id.message}
+          </p>
+        )}
+      </div>
+
       {/* Selected Date Display */}
       <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
         <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">

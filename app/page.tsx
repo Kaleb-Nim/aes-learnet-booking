@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import Calendar from './components/Calendar/Calendar';
 import BookingModal from './components/Booking/BookingModal';
 import BookingDetailsModal from './components/Booking/BookingDetailsModal';
-import { Booking } from './lib/types';
+import { BookingWithEventDetails } from './lib/types';
 import { BookingFormData, MultiDateBookingFormData } from './lib/utils/validationSchemas';
-import { BookingAPI } from './lib/supabase';
+import { BookingAPI, EventAPI } from './lib/supabase';
 import { formatDate } from './lib/utils/dateUtils';
 import { useNotifications } from './components/UI/NotificationSystem';
 import { getErrorMessage } from './lib/utils/errorHandling';
@@ -16,9 +16,9 @@ import { logger } from './lib/utils/logger';
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingWithEventDetails | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<BookingWithEventDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -31,17 +31,17 @@ export default function Home() {
   };
 
   // Helper function to merge bookings while avoiding duplicates
-  const mergeBookings = (existingBookings: Booking[], newBookings: Booking[]) => {
-    const bookingMap = new Map<string, Booking>();
+  const mergeBookings = (existingBookings: BookingWithEventDetails[], newBookings: BookingWithEventDetails[]) => {
+    const bookingMap = new Map<string, BookingWithEventDetails>();
     
     // Add existing bookings
     existingBookings.forEach(booking => {
-      bookingMap.set(booking.id, booking);
+      bookingMap.set(booking.booking_id, booking);
     });
     
     // Add/update with new bookings
     newBookings.forEach(booking => {
-      bookingMap.set(booking.id, booking);
+      bookingMap.set(booking.booking_id, booking);
     });
     
     return Array.from(bookingMap.values()).sort((a, b) => {
@@ -96,33 +96,6 @@ export default function Home() {
       setError(errorMessage);
       showError('Failed to Load Bookings', errorMessage);
       
-      // Fall back to mock data for development
-      const mockBookings = [
-        {
-          id: '1',
-          date: '2025-06-15',
-          start_time: '08:00',
-          end_time: '17:30',
-          event_name: 'ACP Training',
-          poc_name: 'ME3 Kok Wai Chung, CPL Kaleb Nim',
-          phone_number: '84953150',
-          created_at: '2025-06-06T02:20:41.879665+00:00',
-          updated_at: '2025-06-06T02:20:41.879665+00:00'
-        },
-        {
-          id: '2',
-          date: '2025-06-20',
-          start_time: '13:00',
-          end_time: '17:30',
-          event_name: 'AOP Session',
-          poc_name: 'SGT John Doe',
-          phone_number: '91234567',
-          created_at: '2025-06-06T02:20:41.879665+00:00',
-          updated_at: '2025-06-06T02:20:41.879665+00:00'
-        }
-      ];
-      setBookings(mockBookings);
-      setLoadedMonths(new Set(['2025-06']));
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +109,7 @@ export default function Home() {
       setError(null);
       logger.userAction(`Loading bookings for ${monthKey}`);
       
-      let newBookingsData: Booking[];
+      let newBookingsData: BookingWithEventDetails[];
       
       try {
         // Try to get specific month bookings
@@ -196,7 +169,7 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const handleBookingClick = (booking: Booking) => {
+  const handleBookingClick = (booking: BookingWithEventDetails) => {
     setSelectedBooking(booking);
     setIsDetailsModalOpen(true);
   };
@@ -206,33 +179,52 @@ export default function Home() {
     setSelectedBooking(null);
   };
 
-  const handleBookingUpdate = async (id: string, formData: BookingFormData) => {
+  const handleBookingUpdate = async (bookingId: string, formData: BookingFormData) => {
     try {
-      logger.userAction('Updating booking', { id, formData });
-      const updatedBooking = await BookingAPI.updateBooking(id, formData);
-      setBookings(prev => prev.map(booking => 
-        booking.id === id ? updatedBooking : booking
-      ));
-      setSelectedBooking(updatedBooking);
+      logger.userAction('Updating booking', { bookingId, formData });
+      
+      // Find the current booking to get the event ID
+      const currentBooking = bookings.find(b => b.booking_id === bookingId);
+      if (!currentBooking) {
+        throw new Error('Booking not found');
+      }
+      
+      // Update the event with new data
+      await EventAPI.updateEvent(currentBooking.event_id, {
+        room_id: formData.room_id,
+        event_name: formData.event_name,
+        poc_name: formData.poc_name,
+        phone_number: formData.phone_number,
+        start_time: formData.start_time,
+        end_time: formData.end_time
+      });
+      
+      // Update the booking's date if it changed
+      if (formData.date !== currentBooking.date) {
+        await BookingAPI.updateBooking(bookingId, { date: formData.date });
+      }
+      
+      // Reload bookings to get updated data
+      await loadBookings();
       
       success('Booking Updated', 'Your booking has been updated successfully.');
-      logger.info(`Successfully updated booking: ${id}`, 'PAGE');
+      logger.info(`Successfully updated booking: ${bookingId}`, 'PAGE');
     } catch (err) {
       const errorMessage = getErrorMessage(err);
-      logger.error('Failed to update booking', 'PAGE', err);
+      logger.error(`Failed to update booking ${bookingId}`, 'PAGE', err);
       showError('Update Failed', errorMessage);
-      throw err; // Re-throw to let the form handle the error
+      throw err; // Re-throw to let the modal handle the error
     }
   };
 
-  const handleBookingDelete = async (id: string) => {
+  const handleBookingDelete = async (bookingId: string) => {
     try {
-      logger.userAction('Deleting booking', { id });
-      await BookingAPI.deleteBooking(id);
-      setBookings(prev => prev.filter(booking => booking.id !== id));
+      logger.userAction('Deleting booking', { bookingId });
+      await BookingAPI.deleteBooking(bookingId);
+      setBookings(prev => prev.filter(booking => booking.booking_id !== bookingId));
       
       success('Booking Deleted', 'Your booking has been deleted successfully.');
-      logger.info(`Successfully deleted booking: ${id}`, 'PAGE');
+      logger.info(`Successfully deleted booking: ${bookingId}`, 'PAGE');
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       logger.error('Failed to delete booking', 'PAGE', err);
@@ -249,16 +241,37 @@ export default function Home() {
   const handleBookingSubmit = async (formData: BookingFormData) => {
     try {
       logger.userAction('Creating booking', { formData });
-      const newBooking = await BookingAPI.createBooking(formData);
+      const { event, booking } = await BookingAPI.createBookingWithEvent(formData);
+      
+      // Convert to BookingWithEventDetails format for UI
+      const bookingWithDetails: BookingWithEventDetails = {
+        booking_id: booking.id,
+        event_id: event.id,
+        date: booking.date,
+        booking_created_at: booking.created_at,
+        booking_updated_at: booking.updated_at,
+        event_name: event.event_name,
+        poc_name: event.poc_name,
+        phone_number: event.phone_number || undefined,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        color_hue: event.color_hue,
+        event_created_at: event.created_at,
+        event_updated_at: event.updated_at,
+        time_range: `${event.start_time}-${event.end_time}`,
+        room_id: event.room_id,
+        room_name: event.room_id === '1-21' ? 'AES Learnet Room 1-21' : 'AES Learnet Room 1-17',
+        room_base_hue: event.room_id === '1-21' ? 0 : 240
+      };
       
       // Update bookings using merge to maintain cache
-      setBookings(prev => mergeBookings(prev, [newBooking]));
+      setBookings(prev => mergeBookings(prev, [bookingWithDetails]));
       
       setIsModalOpen(false);
       setSelectedDate(undefined);
       
       success('Booking Created', `Your booking for ${formData.event_name} has been created successfully.`);
-      logger.info(`Successfully created booking: ${newBooking.id}`, 'PAGE');
+      logger.info(`Successfully created booking: ${booking.id}`, 'PAGE');
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       logger.error('Failed to create booking', 'PAGE', err);
@@ -270,16 +283,37 @@ export default function Home() {
   const handleMultiDateBookingSubmit = async (formData: MultiDateBookingFormData) => {
     try {
       logger.userAction('Creating multi-date booking', { formData });
-      const newBookings = await BookingAPI.createMultiDateBooking(formData);
+      const { event, bookings } = await BookingAPI.createMultiDateBooking(formData);
+      
+      // Convert to BookingWithEventDetails format for UI
+      const bookingsWithDetails: BookingWithEventDetails[] = bookings.map(booking => ({
+        booking_id: booking.id,
+        event_id: event.id,
+        date: booking.date,
+        booking_created_at: booking.created_at,
+        booking_updated_at: booking.updated_at,
+        event_name: event.event_name,
+        poc_name: event.poc_name,
+        phone_number: event.phone_number || undefined,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        color_hue: event.color_hue,
+        event_created_at: event.created_at,
+        event_updated_at: event.updated_at,
+        time_range: `${event.start_time}-${event.end_time}`,
+        room_id: event.room_id,
+        room_name: event.room_id === '1-21' ? 'AES Learnet Room 1-21' : 'AES Learnet Room 1-17',
+        room_base_hue: event.room_id === '1-21' ? 0 : 240
+      }));
       
       // Update bookings using merge to maintain cache
-      setBookings(prev => mergeBookings(prev, newBookings));
+      setBookings(prev => mergeBookings(prev, bookingsWithDetails));
       
       setIsModalOpen(false);
       setSelectedDate(undefined);
       
-      success('Multi-Date Booking Created', `${newBookings.length} bookings created successfully for ${formData.event_name} across multiple dates.`);
-      logger.info(`Successfully created ${newBookings.length} multi-date bookings`, 'PAGE');
+      success('Multi-Date Booking Created', `${bookings.length} bookings created successfully for ${formData.event_name} across multiple dates.`);
+      logger.info(`Successfully created ${bookings.length} multi-date bookings`, 'PAGE');
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       logger.error('Failed to create multi-date booking', 'PAGE', err);

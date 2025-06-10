@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
 export const bookingFormSchema = z.object({
+  room_id: z.string()
+    .min(1, 'Room selection is required')
+    .refine((roomId) => {
+      // Validate room IDs
+      return ['1-21', '1-17'].includes(roomId);
+    }, 'Invalid room selection'),
+
   date: z.string()
     .min(1, 'Date is required')
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
@@ -68,6 +75,12 @@ export type BookingFormData = z.infer<typeof bookingFormSchema>;
 
 // Multi-date booking schema
 export const multiDateBookingFormSchema = z.object({
+  room_id: z.string()
+    .min(1, 'Room selection is required')
+    .refine((roomId) => {
+      return ['1-21', '1-17'].includes(roomId);
+    }, 'Invalid room selection'),
+
   dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'))
     .min(1, 'At least one date must be selected')
     .max(30, 'Cannot select more than 30 dates')

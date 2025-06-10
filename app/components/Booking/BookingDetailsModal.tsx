@@ -18,14 +18,14 @@ import {
 import Modal from '../UI/Modal';
 import Button from '../UI/Button';
 import Input from '../UI/Input';
-import { Booking } from '../../lib/types';
+import { BookingWithEventDetails } from '../../lib/types';
 import { BookingFormData, bookingFormSchema } from '../../lib/utils/validationSchemas';
 import { formatDisplayDate, formatTimeRange } from '../../lib/utils/dateUtils';
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  booking: Booking | null;
+  booking: BookingWithEventDetails | null;
   onUpdate: (id: string, data: BookingFormData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   isLoading?: boolean;
@@ -50,6 +50,7 @@ export default function BookingDetailsModal({
   } = useForm<BookingFormData>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: booking ? {
+      room_id: booking.room_id,
       date: booking.date,
       start_time: booking.start_time,
       end_time: booking.end_time,
@@ -63,6 +64,7 @@ export default function BookingDetailsModal({
   useEffect(() => {
     if (booking) {
       reset({
+        room_id: booking.room_id,
         date: booking.date,
         start_time: booking.start_time,
         end_time: booking.end_time,
@@ -77,6 +79,7 @@ export default function BookingDetailsModal({
     if (isEditMode && booking) {
       // Reset form to original values if canceling edit
       reset({
+        room_id: booking.room_id,
         date: booking.date,
         start_time: booking.start_time,
         end_time: booking.end_time,
@@ -92,7 +95,7 @@ export default function BookingDetailsModal({
     if (!booking) return;
     
     try {
-      await onUpdate(booking.id, data);
+      await onUpdate(booking.booking_id, data);
       setIsEditMode(false);
     } catch (error) {
       console.error('Failed to update booking:', error);
@@ -109,7 +112,7 @@ export default function BookingDetailsModal({
     if (confirmDelete) {
       setIsDeleting(true);
       try {
-        await onDelete(booking.id);
+        await onDelete(booking.booking_id);
         onClose();
       } catch (error) {
         console.error('Failed to delete booking:', error);
@@ -273,20 +276,20 @@ export default function BookingDetailsModal({
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Booking ID:</span>
                 <div className="font-mono text-xs text-gray-700 dark:text-gray-300 break-all">
-                  {booking.id}
+                  {booking.booking_id}
                 </div>
               </div>
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Created:</span>
                 <div className="text-gray-700 dark:text-gray-300">
-                  {new Date(booking.created_at).toLocaleString()}
+                  {new Date(booking.booking_created_at).toLocaleString()}
                 </div>
               </div>
-              {booking.updated_at !== booking.created_at && (
+              {booking.booking_updated_at !== booking.booking_created_at && (
                 <div className="sm:col-span-2">
                   <span className="text-gray-500 dark:text-gray-400">Last Updated:</span>
                   <div className="text-gray-700 dark:text-gray-300">
-                    {new Date(booking.updated_at).toLocaleString()}
+                    {new Date(booking.booking_updated_at).toLocaleString()}
                   </div>
                 </div>
               )}

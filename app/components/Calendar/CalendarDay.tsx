@@ -78,7 +78,7 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
           <div className="block sm:hidden">
             {bookings.slice(0, 1).map((booking) => (
               <div
-                key={booking.id}
+                key={booking.booking_id}
                 className="text-[10px] p-0.5 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded truncate cursor-pointer hover:bg-red-200 dark:hover:bg-red-800/40 transition-colors"
                 title={`${booking.event_name} - ${formatTimeRange(booking.start_time, booking.end_time)}`}
                 onClick={(e) => {
@@ -106,7 +106,7 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
           <div className="hidden sm:block">
             {bookings.slice(0, 2).map((booking) => (
               <div
-                key={booking.id}
+                key={booking.booking_id}
                 className="text-xs p-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded truncate mb-1 cursor-pointer hover:bg-red-200 dark:hover:bg-red-800/40 transition-colors"
                 title={`${booking.event_name} - ${formatTimeRange(booking.start_time, booking.end_time)}`}
                 onClick={(e) => {
