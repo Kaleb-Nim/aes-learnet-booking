@@ -11,6 +11,10 @@ This folder contains documentation generated during the AI-assisted development 
 - **[MOBILE_IMPROVEMENTS.md](./MOBILE_IMPROVEMENTS.md)** - Mobile responsiveness enhancements
 - **[MULTI_DATE_UX_IMPROVEMENTS.md](./MULTI_DATE_UX_IMPROVEMENTS.md)** - Multi-date booking UX improvements
 
+### Recent Updates & Bug Fixes
+- **[BUGFIXES_AND_IMPROVEMENTS.md](./BUGFIXES_AND_IMPROVEMENTS.md)** - Latest bug fixes and feature enhancements
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Quick start guide and common tasks
+
 ### Project Management
 - **[IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)** - Comprehensive feature implementation tracking
 - **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Database setup and configuration guide

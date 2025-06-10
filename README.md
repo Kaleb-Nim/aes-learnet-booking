@@ -78,11 +78,24 @@ Each booking includes:
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
+## Recent Updates
+
+### 🚀 Latest Enhancements (December 2024)
+- **Multi-room availability**: Book Room 1-17 even when Room 1-21 is occupied
+- **Enhanced room colors**: Visual distinction with red (1-21) and blue (1-17) themes
+- **Simplified time selection**: Preset slots instead of manual time entry
+- **Fixed validation bugs**: Eliminated false time format errors when editing
+- **Improved booking details**: Room name display and better edit functionality
+- **Smart availability indicators**: Shows exactly which rooms are free
+
 ## Project Structure
 
 - `/app` - Next.js App Router pages and components
 - `/supabase-schema.sql` - Database schema with room support
 - `/ai_docs` - Development documentation and feature notes
+  - `BUGFIXES_AND_IMPROVEMENTS.md` - Latest bug fixes and improvements
+  - `IMPLEMENTATION_STATUS.md` - Complete feature tracking
+  - `MULTI_ROOM_FEATURE_README.md` - Multi-room system documentation
 
 ## Deployment
 
