@@ -110,7 +110,7 @@ export default function BookingModal({
             <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
               {existingBookings.map((booking, index) => (
                 <li key={index}>
-                  • {booking.event_name} ({booking.start_time} - {booking.end_time})
+                  • {booking.event_name} - Room {booking.room_id} ({booking.start_time} - {booking.end_time})
                 </li>
               ))}
             </ul>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, Clock, User, Phone, FileText, CalendarDays, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, User, Phone, FileText, CalendarDays, ArrowRight, Home } from 'lucide-react';
 import { 
   multiDateBookingFormSchema, 
   MultiDateBookingFormData 
@@ -39,6 +39,7 @@ export default function MultiDateBookingForm({
   } = useForm<MultiDateBookingFormData>({
     resolver: zodResolver(multiDateBookingFormSchema),
     defaultValues: {
+      room_id: '1-21',
       dates: [],
       start_time: '08:00',
       end_time: '17:30',
@@ -100,11 +101,14 @@ export default function MultiDateBookingForm({
   const today = new Date();
   const minDate = formatDate(today);
 
-  // Check for conflicts with existing bookings
+  // Check for conflicts with existing bookings for the selected room
   const getConflictsForDates = () => {
+    const selectedRoomId = watch('room_id');
     const conflicts: string[] = [];
     selectedDates.forEach(date => {
-      const dateBookings = existingBookings.filter(booking => booking.date === date);
+      const dateBookings = existingBookings.filter(booking => 
+        booking.date === date && booking.room_id === selectedRoomId
+      );
       if (dateBookings.length > 0) {
         conflicts.push(date);
       }
@@ -112,6 +116,7 @@ export default function MultiDateBookingForm({
     return conflicts;
   };
 
+  const selectedRoomId = watch('room_id');
   const conflicts = getConflictsForDates();
 
   return (
@@ -125,6 +130,28 @@ export default function MultiDateBookingForm({
         <p className="text-sm text-green-700 dark:text-green-300 mt-1">
           Select start and end dates to book consecutive days for the same event. Perfect for training programs, workshops, and extended meetings.
         </p>
+      </div>
+
+      {/* Room Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Room Selection
+        </label>
+        <div className="relative">
+          <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <select
+            {...register('room_id')}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          >
+            <option value="1-21">Room #1-21 (Main Conference Room)</option>
+            <option value="1-17">Room #1-17 (Training Room)</option>
+          </select>
+        </div>
+        {errors.room_id && (
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {errors.room_id.message}
+          </p>
+        )}
       </div>
 
       {/* Date Range Selection */}
@@ -201,7 +228,7 @@ export default function MultiDateBookingForm({
             </div>
             <div className="max-h-32 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
-                {selectedDates.map((date, index) => (
+                {selectedDates.map((date) => (
                   <div
                     key={date}
                     className={`p-1 rounded text-center ${
@@ -248,7 +275,7 @@ export default function MultiDateBookingForm({
             ⚠️ Booking Conflicts Detected
           </h4>
           <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
-            {conflicts.length} of your selected dates already have bookings. 
+            {conflicts.length} of your selected dates already have bookings for Room {selectedRoomId}. 
             This will create overlapping bookings if you proceed.
           </p>
           <div className="text-xs text-yellow-600 dark:text-yellow-400">
@@ -264,7 +291,7 @@ export default function MultiDateBookingForm({
           <span className="font-medium">Time: 08:00 - 17:30 (Full Day)</span>
         </div>
         <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-          All selected dates will use full day timing.
+          All selected dates will use full day timing for Room {selectedRoomId}.
         </p>
       </div>
 
@@ -339,10 +366,10 @@ export default function MultiDateBookingForm({
       {/* Multi-Date Booking Notice */}
       <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
         <p><strong>Date Range Booking:</strong></p>
-        <p>• Select start and end dates for consecutive day booking</p>
+        <p>• Select room and date range for consecutive day booking</p>
         <p>• All dates will use full day timing (08:00-17:30)</p>
         <p>• Maximum 30 consecutive days can be selected</p>
-        <p>• Each date creates a separate booking entry</p>
+        <p>• Each date creates a separate booking entry for the selected room</p>
         <p>• Perfect for multi-day training programs and extended events</p>
       </div>
     </form>
