@@ -163,7 +163,6 @@ export interface CalendarProps {
   bookings?: BookingWithEventDetails[];
   selectedRoom?: string; // Filter by room
   onCreateBooking?: (date: Date, roomId?: string) => void;
-  onMultiDateBooking?: () => void;
   onBookingClick?: (booking: BookingWithEventDetails) => void;
   onMonthChange?: (date: Date) => void;
   onRoomChange?: (roomId: string) => void;

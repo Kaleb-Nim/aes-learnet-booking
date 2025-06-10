@@ -11,7 +11,6 @@ export default function Calendar({
   onDateSelect,
   bookings = [],
   onCreateBooking,
-  onMultiDateBooking,
   onBookingClick,
   onMonthChange
 }: CalendarProps) {
@@ -50,21 +49,8 @@ export default function Calendar({
           AES Learnet Room Booking
         </h1>
         <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-3">
-          Click on an available date to book the room • Click on existing bookings to view details
+          Click on any date to book an available room • Click on existing bookings to view details
         </p>
-        
-        {/* Multi-Date Booking Button */}
-        {onMultiDateBooking && (
-          <button
-            onClick={onMultiDateBooking}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Book Date Range
-          </button>
-        )}
       </div>
 
       {/* Calendar Navigation */}
@@ -86,14 +72,18 @@ export default function Calendar({
       <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-100 border border-green-300 rounded"></div>
-          <span className="text-gray-700 dark:text-gray-300">Available</span>
+          <span className="text-gray-700 dark:text-gray-300">Available Rooms</span>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-100 border border-red-300 rounded"></div>
-          <span className="text-gray-700 dark:text-gray-300">Booked</span>
+          <span className="text-gray-700 dark:text-gray-300">Room 1-21</span>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-100 border border-blue-300 rounded"></div>
+          <span className="text-gray-700 dark:text-gray-300">Room 1-17</span>
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-100 border border-blue-300 rounded ring-2 ring-blue-500"></div>
           <span className="text-gray-700 dark:text-gray-300">Today</span>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">

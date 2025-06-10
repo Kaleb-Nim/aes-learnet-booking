@@ -164,10 +164,6 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const handleMultiDateBooking = () => {
-    setSelectedDate(undefined); // Clear selected date for multi-date mode
-    setIsModalOpen(true);
-  };
 
   const handleBookingClick = (booking: BookingWithEventDetails) => {
     setSelectedBooking(booking);
@@ -350,7 +346,6 @@ export default function Home() {
         onDateSelect={handleDateSelect}
         bookings={bookings}
         onCreateBooking={handleCreateBooking}
-        onMultiDateBooking={handleMultiDateBooking}
         onBookingClick={handleBookingClick}
         onMonthChange={handleMonthChange}
       />

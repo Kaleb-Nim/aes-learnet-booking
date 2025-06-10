@@ -42,12 +42,17 @@ export const getCalendarDays = (currentDate: Date, bookings: BookingWithEventDet
     const dateString = formatDate(date);
     const dayBookings = bookings.filter(booking => booking.date === dateString);
     
+    // Check if any rooms are available (support for multi-room booking)
+    const bookedRoomIds = [...new Set(dayBookings.map(booking => booking.room_id))];
+    const availableRooms = ['1-21', '1-17'].filter(roomId => !bookedRoomIds.includes(roomId));
+    const hasAvailableRooms = availableRooms.length > 0;
+    
     return {
       date,
       isCurrentMonth: isSameMonth(date, currentDate),
       isToday: isToday(date),
       bookings: dayBookings,
-      isAvailable: dayBookings.length === 0 && date >= new Date()
+      isAvailable: hasAvailableRooms && date >= new Date()
     };
   });
 };

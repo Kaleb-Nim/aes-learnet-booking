@@ -187,33 +187,36 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
         </div>
       )}
 
-      {/* Available slot indicator */}
-      {isAvailable && isCurrentMonth && (
-        <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
-          <span className="hidden sm:inline">Available</span>
-          <span className="sm:hidden">•</span>
-        </div>
-      )}
-      
-      {/* Room status indicator when there are bookings */}
-      {isCurrentMonth && bookings.length > 0 && (
-        <div className="mt-1 text-[8px] sm:text-[10px] text-gray-500 dark:text-gray-400">
+      {/* Availability indicator */}
+      {isCurrentMonth && (
+        <div className="mt-1 text-[8px] sm:text-[10px]">
           {(() => {
-            const bookedRooms = [...new Set(bookings.map(b => b.room_id))];
-            const availableRooms = ['1-21', '1-17'].filter(room => !bookedRooms.includes(room));
-            
-            if (availableRooms.length > 0) {
+            if (bookings.length === 0) {
+              // No bookings - show "Available"
               return (
-                <span className="text-green-600 dark:text-green-400">
-                  {availableRooms.join(', ')} free
-                </span>
+                <div className="text-green-600 dark:text-green-400 font-medium text-[10px] sm:text-xs">
+                  <span className="hidden sm:inline">Available</span>
+                  <span className="sm:hidden">•</span>
+                </div>
               );
             } else {
-              return (
-                <span className="text-red-600 dark:text-red-400">
-                  All rooms booked
-                </span>
-              );
+              // Has bookings - show room-specific availability
+              const bookedRooms = [...new Set(bookings.map(b => b.room_id))];
+              const availableRooms = ['1-21', '1-17'].filter(room => !bookedRooms.includes(room));
+              
+              if (availableRooms.length > 0) {
+                return (
+                  <span className="text-green-600 dark:text-green-400 font-medium">
+                    {availableRooms.join(', ')} free
+                  </span>
+                );
+              } else {
+                return (
+                  <span className="text-red-600 dark:text-red-400 font-medium">
+                    All rooms booked
+                  </span>
+                );
+              }
             }
           })()}
         </div>
