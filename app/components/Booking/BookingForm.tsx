@@ -113,26 +113,26 @@ export default function BookingForm({
         </div>
       </div>
 
-      {/* Time Selection */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Input
-            label="Start Time"
-            type="time"
-            icon={<Clock className="w-4 h-4" />}
-            error={errors.start_time?.message}
-            {...register('start_time')}
-          />
+      {/* Selected Time Display */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Selected Time Slot
+        </label>
+        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600">
+          <Clock className="w-4 h-4 text-gray-400" />
+          <span className="text-gray-900 dark:text-gray-100">
+            {watchedStartTime && watchedEndTime ? `${watchedStartTime} - ${watchedEndTime}` : 'Please select a time slot above'}
+          </span>
         </div>
-        <div>
-          <Input
-            label="End Time"
-            type="time"
-            icon={<Clock className="w-4 h-4" />}
-            error={errors.end_time?.message}
-            {...register('end_time')}
-          />
-        </div>
+        {(errors.start_time || errors.end_time) && (
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {errors.start_time?.message || errors.end_time?.message}
+          </p>
+        )}
+        
+        {/* Hidden inputs to maintain form validation */}
+        <input type="hidden" {...register('start_time')} />
+        <input type="hidden" {...register('end_time')} />
       </div>
 
       {/* Event Name */}
@@ -198,7 +198,7 @@ export default function BookingForm({
         <p>• Full day: 8:00 AM - 5:30 PM</p>
         <p>• Morning: 8:00 AM - 12:00 PM</p>
         <p>• Afternoon: 1:00 PM - 5:30 PM</p>
-        <p className="mt-2"><strong>Minimum Duration:</strong> 30 minutes</p>
+        <p className="mt-2"><strong>Note:</strong> Please select one of the preset time slots above</p>
       </div>
     </form>
   );
