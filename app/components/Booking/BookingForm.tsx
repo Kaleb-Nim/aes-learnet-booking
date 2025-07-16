@@ -13,14 +13,29 @@ interface BookingFormProps {
   onSubmit: (data: BookingFormData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  existingBookings?: any[];
 }
 
 export default function BookingForm({ 
   selectedDate, 
   onSubmit, 
   onCancel, 
-  isLoading = false 
+  isLoading = false,
+  existingBookings = []
 }: BookingFormProps) {
+  
+  // Determine the best available room
+  const getDefaultRoom = () => {
+    if (existingBookings.length === 0) {
+      return '1-21'; // Default to main conference room if no bookings
+    }
+    
+    const bookedRooms = [...new Set(existingBookings.map(b => b.room_id))];
+    const availableRooms = ['1-21', '1-17'].filter(room => !bookedRooms.includes(room));
+    
+    // Return the first available room, or '1-21' as fallback
+    return availableRooms.length > 0 ? availableRooms[0] : '1-21';
+  };
   const {
     register,
     handleSubmit,
@@ -30,7 +45,7 @@ export default function BookingForm({
   } = useForm<BookingFormData>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
-      room_id: '1-21',
+      room_id: getDefaultRoom(),
       date: formatDate(selectedDate),
       start_time: '08:00',
       end_time: '12:00',
@@ -64,6 +79,13 @@ export default function BookingForm({
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Room Selection
+          {existingBookings.length > 0 && (() => {
+            const bookedRooms = [...new Set(existingBookings.map(b => b.room_id))];
+            const availableRooms = ['1-21', '1-17'].filter(room => !bookedRooms.includes(room));
+            if (availableRooms.length > 0) {
+              return <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-medium bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">Room {availableRooms[0]} pre-selected (available)</span>;
+            }
+          })()}
         </label>
         <div className="relative">
           <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -71,8 +93,8 @@ export default function BookingForm({
             {...register('room_id')}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           >
-            <option value="1-21">Room #1-21 (Main Conference Room)</option>
-            <option value="1-17">Room #1-17 (Training Room)</option>
+            <option value="1-21">Room #1-21 (Main Conference Room) {existingBookings.some(b => b.room_id === '1-21') ? '- Already Booked' : ''}</option>
+            <option value="1-17">Room #1-17 (Training Room) {existingBookings.some(b => b.room_id === '1-17') ? '- Already Booked' : ''}</option>
           </select>
         </div>
         {errors.room_id && (

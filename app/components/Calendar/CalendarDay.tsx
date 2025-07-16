@@ -64,8 +64,8 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
     };
   };
   
-  // Style classes based on day state
-  const baseClasses = "min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 border border-gray-200 dark:border-gray-700 transition-all duration-200";
+  // Style classes based on day state - optimized for 70% content allocation
+  const baseClasses = "min-h-[90px] sm:min-h-[100px] p-1.5 sm:p-2 border border-gray-200 dark:border-gray-700 transition-all duration-200 relative flex flex-col";
   
   let dayClasses = baseClasses;
   
@@ -89,9 +89,9 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
 
   return (
     <div className={dayClasses} onClick={handleClick}>
-      {/* Day number */}
-      <div className="flex items-center justify-between mb-1 sm:mb-2">
-        <span className={`text-xs sm:text-sm font-medium ${
+      {/* Compact header - 15% of space */}
+      <div className="flex items-center justify-between mb-1 h-[14px] sm:h-[15px]">
+        <span className={`text-xs font-medium ${
           isToday 
             ? 'text-blue-600 dark:text-blue-400' 
             : isCurrentMonth 
@@ -101,61 +101,29 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
           {dayNumber}
         </span>
         
-        {/* Availability indicator - hide on mobile for space */}
-        {isCurrentMonth && (
-          <div className="hidden sm:flex items-center">
-            {isAvailable ? (
-              <Calendar className="w-3 h-3 text-green-500" />
-            ) : bookings.length > 0 ? (
-              <Clock className="w-3 h-3 text-red-500" />
-            ) : null}
-          </div>
+        {/* Minimal availability indicator */}
+        {isCurrentMonth && bookings.length === 0 && (
+          <Calendar className="w-3 h-3 text-green-500" />
         )}
       </div>
 
-      {/* Bookings list */}
+      {/* Bookings content area - 70% of space, optimized for mobile */}
       {isCurrentMonth && bookings.length > 0 && (
-        <div className="space-y-0.5 sm:space-y-1">
-          {/* Mobile: Show only 1 booking, Desktop: Show 2 */}
-          <div className="block sm:hidden">
-            {bookings.slice(0, 1).map((booking) => {
+        <div className="flex-1 min-h-[60px] sm:min-h-[65px] flex flex-col justify-start">
+          {/* Always show all bookings up to 2 - mobile optimized */}
+          <div className="space-y-0.5 flex-1">
+            {bookings.slice(0, 2).map((booking, index) => {
               const colors = getBookingColors(booking);
+              // Use more compact layout on mobile when 2 bookings present
+              const isCompactMobile = bookings.length === 2;
               return (
                 <div
                   key={booking.booking_id}
-                  className={`text-[10px] p-0.5 ${colors.background} ${colors.text} rounded truncate cursor-pointer ${colors.hover} transition-colors`}
-                  title={`${booking.event_name} - ${formatTimeRange(booking.start_time, booking.end_time)} - ${booking.room_name || `Room ${booking.room_id}`}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBookingClick?.(booking);
-                  }}
-                >
-                  <div className="font-medium truncate">{booking.event_name}</div>
-                  <div className="text-[8px] opacity-75 truncate">{booking.room_id}</div>
-                </div>
-              );
-            })}
-            {bookings.length > 1 && (
-              <div 
-                className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBookingClick?.(bookings[1]); // Show second booking
-                }}
-              >
-                +{bookings.length - 1} more
-              </div>
-            )}
-          </div>
-          
-          {/* Desktop: Show 2 bookings with time */}
-          <div className="hidden sm:block">
-            {bookings.slice(0, 2).map((booking) => {
-              const colors = getBookingColors(booking);
-              return (
-                <div
-                  key={booking.booking_id}
-                  className={`text-xs p-1 ${colors.background} ${colors.text} rounded truncate mb-1 cursor-pointer ${colors.hover} transition-colors`}
+                  className={`${
+                    isCompactMobile 
+                      ? 'text-[9px] sm:text-xs p-0.5 sm:p-1.5' 
+                      : 'text-[10px] sm:text-xs p-1 sm:p-1.5'
+                  } ${colors.background} ${colors.text} rounded cursor-pointer ${colors.hover} transition-colors`}
                   title={`${booking.event_name} - ${formatTimeRange(booking.start_time, booking.end_time)} - ${booking.room_name || `Room ${booking.room_id}`}`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -163,10 +131,20 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
                   }}
                 >
                   <div className="flex items-center justify-between gap-1">
-                    <div className="font-medium truncate flex-1">{booking.event_name}</div>
-                    <div className="text-[10px] opacity-75 flex-shrink-0">{booking.room_id}</div>
+                    <div className={`font-medium truncate flex-1 ${
+                      isCompactMobile ? 'text-[9px] sm:text-xs' : 'text-[10px] sm:text-xs'
+                    }`}>
+                      {booking.event_name}
+                    </div>
+                    <div className={`opacity-75 flex-shrink-0 font-medium ${
+                      isCompactMobile ? 'text-[8px] sm:text-[10px]' : 'text-[8px] sm:text-[10px]'
+                    }`}>
+                      {booking.room_id}
+                    </div>
                   </div>
-                  <div className={colors.timeText}>
+                  <div className={`${colors.timeText} leading-tight ${
+                    isCompactMobile ? 'text-[7px] sm:text-[10px]' : 'text-[8px] sm:text-[10px]'
+                  }`}>
                     {formatTimeRange(booking.start_time, booking.end_time)}
                   </div>
                 </div>
@@ -174,10 +152,10 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
             })}
             {bookings.length > 2 && (
               <div 
-                className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
+                className="text-[8px] sm:text-[10px] text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 text-center py-0.5"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onBookingClick?.(bookings[2]); // Show third booking
+                  onBookingClick?.(bookings[2]);
                 }}
               >
                 +{bookings.length - 2} more
@@ -187,36 +165,32 @@ export default function CalendarDay({ day, onDateClick, onBookingClick, isSelect
         </div>
       )}
 
-      {/* Availability indicator */}
+      {/* Compact availability indicator - 15% of space */}
       {isCurrentMonth && (
-        <div className="mt-1 text-[8px] sm:text-[10px]">
+        <div className="mt-auto">
           {(() => {
             if (bookings.length === 0) {
-              // No bookings - show "Available"
+              // No bookings - show compact "Available" button
               return (
-                <div className="text-green-600 dark:text-green-400 font-medium text-[10px] sm:text-xs">
+                <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-medium text-center border border-green-200 dark:border-green-800 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors cursor-pointer">
+                  <span className="sm:hidden">Tap to Book</span>
                   <span className="hidden sm:inline">Available</span>
-                  <span className="sm:hidden">•</span>
                 </div>
               );
             } else {
-              // Has bookings - show room-specific availability
+              // Has bookings - show available room indicator (simplified)
               const bookedRooms = [...new Set(bookings.map(b => b.room_id))];
               const availableRooms = ['1-21', '1-17'].filter(room => !bookedRooms.includes(room));
               
               if (availableRooms.length > 0) {
                 return (
-                  <span className="text-green-600 dark:text-green-400 font-medium">
-                    {availableRooms.join(', ')} free
-                  </span>
-                );
-              } else {
-                return (
-                  <span className="text-red-600 dark:text-red-400 font-medium">
-                    All rooms booked
-                  </span>
+                  <div className="text-green-700 dark:text-green-300 px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-medium text-center border border-green-300 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors cursor-pointer">
+                    {availableRooms[0]}
+                  </div>
                 );
               }
+              // If both rooms booked, no bottom indicator needed
+              return null;
             }
           })()}
         </div>

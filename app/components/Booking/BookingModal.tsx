@@ -64,6 +64,16 @@ export default function BookingModal({
     if (bookingMode === 'multi') {
       return 'Book AES Learnet Room - Multiple Dates';
     }
+    
+    if (selectedDate && existingBookings.length > 0) {
+      const bookedRooms = [...new Set(existingBookings.map(b => b.room_id))];
+      const availableRooms = ['1-21', '1-17'].filter(room => !bookedRooms.includes(room));
+      
+      if (availableRooms.length > 0) {
+        return `Book Room ${availableRooms[0]} - ${formatDisplayDate(selectedDate)}`;
+      }
+    }
+    
     return selectedDate 
       ? `Book AES Learnet Room - ${formatDisplayDate(selectedDate)}`
       : 'Book AES Learnet Room';
@@ -101,24 +111,53 @@ export default function BookingModal({
           </Button>
         </div>
 
-        {/* Existing bookings warning for single date */}
-        {bookingMode === 'single' && selectedDate && existingBookings.length > 0 && (
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-              Existing Bookings on This Date:
-            </h4>
-            <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-              {existingBookings.map((booking, index) => (
-                <li key={index}>
-                  • {booking.event_name} - Room {booking.room_id} ({booking.start_time} - {booking.end_time})
-                </li>
-              ))}
-            </ul>
-            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-              Please ensure your booking time doesn't conflict with existing bookings.
-            </p>
-          </div>
-        )}
+        {/* Existing bookings info for single date - encouraging tone */}
+        {bookingMode === 'single' && selectedDate && existingBookings.length > 0 && (() => {
+          const bookedRooms = [...new Set(existingBookings.map(b => b.room_id))];
+          const availableRooms = ['1-21', '1-17'].filter(room => !bookedRooms.includes(room));
+          
+          if (availableRooms.length > 0) {
+            return (
+              <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                  🎉 Good News! Room {availableRooms.join(' and ')} Available
+                </h4>
+                <div className="text-sm text-green-700 dark:text-green-300 mb-3">
+                  <p className="font-medium mb-1">Current bookings on this date:</p>
+                  <ul className="space-y-1">
+                    {existingBookings.map((booking, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                        {booking.event_name} - Room {booking.room_id} ({booking.start_time} - {booking.end_time})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-2 rounded">
+                  ✅ <strong>You can book Room {availableRooms[0]}</strong> - The form below is already set to the available room.
+                </p>
+              </div>
+            );
+          } else {
+            return (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                  All Rooms Booked on This Date
+                </h4>
+                <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
+                  {existingBookings.map((booking, index) => (
+                    <li key={index}>
+                      • {booking.event_name} - Room {booking.room_id} ({booking.start_time} - {booking.end_time})
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                  Both rooms are already booked. Please select a different date or time.
+                </p>
+              </div>
+            );
+          }
+        })()}
 
         {/* Forms */}
         {bookingMode === 'single' && selectedDate ? (
@@ -127,6 +166,7 @@ export default function BookingModal({
             onSubmit={handleSingleDateSubmit}
             onCancel={handleClose}
             isLoading={isLoading}
+            existingBookings={existingBookings}
           />
         ) : bookingMode === 'multi' ? (
           <MultiDateBookingForm
